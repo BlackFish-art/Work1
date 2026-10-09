@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花满溢 - 一家艺术满溢，爱意满溢的花店</title>
+    <!-- 引入 fullPage.js 的 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.20/fullpage.min.css" />
+    <!-- 引入艺术字体和常规字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Serif+SC:wght@400;600;700&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 全局变量与重置 --- */
+        :root {
+            --bg-color: #f7f5f0;          
+            --primary-purple: #8e7cc3;   
+            --primary-purple-light: #a898db;
+            --accent-green: #9bbd8c;     
+            --accent-green-hover: #85aa76;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --card-shadow: 0 15px 40px rgba(142, 124, 195, 0.12);
+            --card-shadow-hover: 0 25px 50px rgba(142, 124, 195, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Noto Serif SC", "Microsoft YaHei", sans-serif;
+            color: var(--text-dark);
+            background-color: var(--bg-color);
+        }
+
+        /* 全屏背景图设置 */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background-image: url('https://images.unsplash.com/photo-1490750967868-88cb4ecb0701?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        .bg-overlay::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(247, 245, 240, 0.85); /* 降低透明度 */
+        }
+
+        /* 通用卡片样式 */
+        .card {
+            background-color: #ffffff;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        /* 轮播图片容器 */
+        .carousel-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .carousel-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            z-index: 1;
+        }
+        .carousel-img.active {
+            opacity: 1;
+        }
+        .overlay-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0) 100%);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 50px;
+            color: white;
+        }
+        .overlay-text h2 {
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+        .overlay-text p {
+            font-size: 18px;
+            font-family: "Nunito", sans-serif;
+            opacity: 0.9;
+        }
+
+        /* 指示器 */
+        .indicators {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 3;
+            display: flex;
+            gap: 12px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            background-color: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dot.active {
+            background-color: white;
+            transform: scale(1.3);
+        }
+
+        /* --- 页面结构布局 --- */
+        .section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+            overflow: hidden; /* 防止在切换时有滚动条闪现 */
+        }
+
+        .container {
+            width: 90vw;
+            max-width: 1500px;
+            height: 85vh; /* 保证在可视区域内 */
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* 首页特有布局 */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            height: 120px;
+            flex-shrink: 0;
+        }
+        .top-left-tag {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .moon-icon {
+            width: 45px;
+            height: 45px;
+            background-color: var(--primary-purple);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 2px 2px 15px rgba(142, 124, 195, 0.4);
+        }
+        .moon-icon::after {
+            content: '';
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background-color: #f7f5f0; 
+            border-radius: 50%;
+            top: -7px;
+            left: 14px;
+        }
+        .warm-words {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-purple);
+            letter-spacing: 5px;
+        }
+        .art-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 100px;
+            color: var(--primary-purple);
+            text-shadow: 6px 6px 0px rgba(255, 255, 255, 0.9), 12px 12px 30px rgba(142, 124, 195, 0.3);
+            letter-spacing: 15px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+        .slogan-bar {
+            background-color: var(--accent-green);
+            padding: 12px 35px;
+            color: white;
+            border-radius: 40px;
+            font-size: 16px;
+            letter-spacing: 5px;
+            box-shadow: 0 8px 25px rgba(155, 189, 140, 0.4);
+            transition: all 0.3s ease;
+        }
+        .slogan-bar:hover {
+            transform: translateY(-3px);
+            background-color: var(--accent-green-hover);
+        }
+
+        /* 首页内容网格 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            flex: 1;
+            min-height: 0;
+        }
+        .left-column {
+            display: flex;
+            flex-direction: column;
+        }
+        .carousel-card {
+            height: 100%;
+        }
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .btn-item {
+            background-color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            padding: 22px 40px;
+            font-size: 22px;
+            color: var(--text-dark);
+            font-weight: 600;
+            letter-spacing: 3px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background-color: var(--accent-green);
+            transition: width 0.3s ease;
+            z-index: 0;
+            border-radius: 30px;
+        }
+        .btn-item span {
+            position: relative;
+            z-index: 1;
+            margin-right: 15px;
+            font-size: 26px;
+        }
+        .btn-item:hover::before { width: 100%; }
+        .btn-item:hover {
+            transform: translateX(10px);
+            color: white;
+            box-shadow: 0 10px 30px rgba(155, 189, 140, 0.4);
+        }
+
+        /* --- 第二页布局 (节日活动 + 课程) --- */
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+        }
+        .festival-card {
+            height: 100%;
+        }
+        .festival-card .overlay-text h2 {
+            font-size: 42px;
+            line-height: 1.5;
+        }
+        .course-card {
+            background: linear-gradient(135deg, #fff, #fdfaf5);
+            border-radius: 30px;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border: 1px solid rgba(155, 189, 140, 0.2);
+        }
+        .course-card h3 {
+            font-size: 36px;
+            color: var(--primary-purple);
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+        .course-card p {
+            font-size: 20px;
+            color: var(--text-light);
+            line-height: 1.8;
+            margin-bottom: 40px;
+        }
+        .course-btn {
+            align-self: flex-start;
+            background-color: var(--primary-purple);
+            color: white;
+            border: none;
+            padding: 18px 45px;
+            border-radius: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+        .course-btn:hover {
+            background-color: var(--primary-purple-light);
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(142, 124, 195, 0.4);
+        }
+
+        /* --- 第三页布局 (联系我们 + 科普) --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+        }
+        .contact-card {
+            background: linear-gradient(135deg, #f4f8f0, #e8eee4);
+            border-radius: 30px;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .contact-card h3 {
+            font-size: 36px;
+            color: var(--accent-green);
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+        }
+        .contact-card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .contact-card li {
+            font-size: 22px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .contact-card li span {
+            font-size: 30px;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1024px) {
+            .container { width: 95vw; padding: 0 20px; }
+            .art-title { font-size: 60px; letter-spacing: 8px; }
+            .main-grid, .grid-2-col, .info-grid { grid-template-columns: 1fr; }
+            .left-column { display: none; } /* 小屏隐藏左侧大图，简化 */
+            .btn-item { padding: 15px 25px; font-size: 18px; }
+            .course-card, .contact-card { padding: 30px; }
+            .course-card h3, .contact-card h3 { font-size: 26px; }
+            .course-card p, .contact-card li { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 全屏背景 -->
+    <div class="bg-overlay"></div>
+
+    <!-- fullPage 主容器 -->
+    <div id="fullpage">
+
+        <!-- ========== 第一屏：首页 ========== -->
+        <div class="section" id="section1">
+            <div class="container">
+                <!-- 顶部 Header -->
+                <div class="header-section">
+                    <div class="top-left-tag">
+                        <div class="moon-icon"></div>
+                        <div class="warm-words">暖心话语</div>
+                    </div>
+                    <div class="art-title">花满溢</div>
+                    <div class="slogan-bar">宣 传 标 语</div>
+                </div>
+
+                <!-- 主网格 -->
+                <div class="main-grid">
+                    <!-- 左侧大图 -->
+                    <div class="left-column">
+                        <div class="card carousel-card">
+                            <div class="carousel-container">
+                                <img src="https://images.unsplash.com/photo-1490750967868-88cb4ecb0701?q=80&w=1200&auto=format&fit=crop" alt="花艺展示" class="carousel-img active">
+                                <img src="https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=1200&auto=format&fit=crop" alt="花艺展示" class="carousel-img">
+                                <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=1200&auto=format&fit=crop" alt="花艺展示" class="carousel-img">
+                                <div class="overlay-text">
+                                    <h2>花艺展示</h2>
+                                    <h2>承办活动展示</h2>
+                                    <p>Floral Art & Event Planning</p>
+                                </div>
+                                <div class="indicators">
+                                    <div class="dot active" onclick="changeSlide(0)"></div>
+                                    <div class="dot" onclick="changeSlide(1)"></div>
+                                    <div class="dot" onclick="changeSlide(2)"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧按钮 -->
+                    <div class="right-column">
+                        <div class="btn-group">
+                            <div class="btn-item"><span>🌸</span> 应季鲜花</div>
+                            <div class="btn-item"><span>🌿</span> 鲜花科普</div>
+                            <div class="btn-item"><span>📞</span> 商业活动联系</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 第二屏：节日活动 + 课程 ========== -->
+        <div class="section" id="section2">
+            <div class="container">
+                <div class="grid-2-col">
+                    <!-- 节日活动轮播 -->
+                    <div class="card festival-card">
+                        <div class="carousel-container">
+                            <img src="https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?q=80&w=1000&auto=format&fit=crop" alt="节日活动" class="carousel-img active">
+                            <img src="https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1000&auto=format&fit=crop" alt="节日活动" class="carousel-img">
+                            <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1000&auto=format&fit=crop" alt="节日活动" class="carousel-img">
+                            
+                            <div class="overlay-text">
+                                <h2>节日、特殊日子<br>店铺活动展示</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 花艺课程卡片 -->
+                    <div class="card course-card">
+                        <h3>花艺课程 / 沙龙</h3>
+                        <p>零基础花艺体验、专业创业课程、企业团建沙龙。在花与叶的对话中，感受生活的诗意与美好。</p>
+                        <button class="course-btn">立即预约报名 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 第三屏：联系我们 + 科普 ========== -->
+        <div class="section" id="section3">
+            <div class="container">
+                <div class="info-grid">
+                    <!-- 联系卡片 -->
+                    <div class="card contact-card">
+                        <h3>联系我们 / 到店指南</h3>
+                        <ul>
+                            <li><span>📍</span> 城中区花漾大道88号 (花满溢旗舰店)</li>
+                            <li><span>⏰</span> 营业时间：09:00 - 21:00 (周一店休)</li>
+                            <li><span>📞</span> 联系电话：138-8888-8888</li>
+                            <li><span>💬</span> 微信客服：huamanyi2024</li>
+                        </ul>
+                    </div>
+                    <!-- 可自行添加其他卡片，这里留白或放图片 -->
+                    <div class="card" style="background: #e8eee4; display: flex; justify-content: center; align-items: center;">
+                        <h3 style="color: var(--accent-green); font-size: 32px; letter-spacing: 5px;">期待与您相遇</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 引入 fullPage.js 的 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.20/fullpage.min.js"></script>
+    
+    <script>
+        // 初始化 fullPage.js
+        new fullpage('#fullpage', {
+            // 选项配置
+            autoScrolling: true,       // 自动滚动
+            scrollHorizontally: false, // 不启用横向滚动
+            navigation: true,          // 显示右侧导航圆点
+            navigationPosition: 'right',
+            navigationTooltips: ['首页', '节日与课程', '联系我们'], // 鼠标悬停显示提示
+            showActiveTooltip: true,
+            scrollingSpeed: 1000,      // 滚动切换速度（毫秒）
+            easingcss3: 'cubic-bezier(0.645, 0.045, 0.355, 1.000)', // 平滑缓动
+            fitToSection: true,        // 自动适应屏幕
+            afterLoad: function(origin, destination, direction) {
+                // 当切换到对应页面时，可以触发额外动画（可选）
+                console.log("进入第 " + destination.index + " 屏");
+            }
+        });
+
+        // --- 图片轮播逻辑 ---
+        const carousels = [
+            {
+                images: document.querySelectorAll('#section1 .carousel-img'),
+                dots: document.querySelectorAll('#section1 .dot'),
+                currentIndex: 0,
+                interval: null
+            },
+            {
+                images: document.querySelectorAll('#section2 .carousel-img'),
+                dots: [], 
+                currentIndex: 0,
+                interval: null
+            }
+        ];
+
+        function switchImage(carousel, nextIndex) {
+            carousel.images[carousel.currentIndex].classList.remove('active');
+            if (carousel.dots.length > 0) carousel.dots[carousel.currentIndex].classList.remove('active');
+            carousel.currentIndex = nextIndex;
+            carousel.images[carousel.currentIndex].classList.add('active');
+            if (carousel.dots.length > 0) carousel.dots[carousel.currentIndex].classList.add('active');
+        }
+
+        function changeSlide(index) {
+            const carousel = carousels[0];
+            clearInterval(carousel.interval);
+            switchImage(carousel, index);
+            startCarousel(carousel);
+        }
+
+        function startCarousel(carousel) {
+            carousel.interval = setInterval(() => {
+                let nextIndex = (carousel.currentIndex + 1) % carousel.images.length;
+                switchImage(carousel, nextIndex);
+            }, 4000);
+        }
+
+        // 启动轮播
+        carousels.forEach(carousel => {
+            startCarousel(carousel);
+        });
+    </script>
+</body>
+</html>
